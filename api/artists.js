@@ -11,7 +11,7 @@ artistsRouter.get('/', (req, res, next) => {
       if (err) {
         next(err);
       } else {
-        res.status(200).json({artists: rows});
+        res.status(200).json({ artists: rows });
       }
     }
   );
@@ -19,9 +19,9 @@ artistsRouter.get('/', (req, res, next) => {
 
 artistsRouter.post('/', (req, res, next) => {
   if (!req.body.artist.name
-      || !req.body.artist.dateOfBirth
-      || !req.body.artist.biography
-    ) {
+    || !req.body.artist.dateOfBirth
+    || !req.body.artist.biography
+  ) {
     res.sendStatus(400);
   }
   const isCurrentlyEmployed =
@@ -45,7 +45,7 @@ artistsRouter.post('/', (req, res, next) => {
       $biography: req.body.artist.biography,
       $isCurrentlyEmployed: isCurrentlyEmployed
     },
-    function(err) {
+    function (err) {
       if (err) {
         return next(err);
       }
@@ -57,7 +57,7 @@ artistsRouter.post('/', (req, res, next) => {
           $lastId: this.lastID
         },
         (err, row) => {
-          res.status(201).json({artist: row});
+          res.status(201).json({ artist: row });
         }
       );
     }
@@ -86,15 +86,23 @@ artistsRouter.param('artistId', (req, res, next, artistId) => {
 });
 
 artistsRouter.get('/:artistId', (req, res, next) => {
-  res.status(200).json({artist: req.artist});
+  res.status(200).json({ artist: req.artist });
 });
 
 artistsRouter.put('/:artistId', (req, res, next) => {
-  if (!req.body.artist.name
+  if (
+    !req.body.artist.name
     || !req.body.artist.dateOfBirth
     || !req.body.artist.biography
   ) {
     res.sendStatus(400);
+  }
+  const updatedArtist = {
+    $name: req.body.artist.name,
+    $dateOfBirth: req.body.artist.dateOfBirth,
+    $biography: req.body.artist.biography,
+    $isCurrentlyEmployed: req.body.artist.isCurrentlyEmployed,
+    $id: req.params.artistId
   }
   db.run(
     `UPDATE Artist
@@ -103,13 +111,25 @@ artistsRouter.put('/:artistId', (req, res, next) => {
       date_of_birth = $dateOfBirth,
       biography = $biography,
       is_currently_employed = $isCurrentlyEmployed
-    )`,
-    {
-      $name: req.body.artist.name,
-      $dateOfBirth: req.body.artist.dateOfBirth,
-      $biography: req.body.artist.biography,
-      $isCurrentlyEmployed: isCurrentlyEmployed
-    },
+    )
+    WHERE id = $id`,
+    updatedArtist,
+    (err) => {
+      if (err) {
+        return next(err);
+      }
+      db.run(
+        `SELECT *
+        FROM Artist
+        WHERE id = $id`,
+        {
+          $id: updatedArtist.id
+        },
+        (err, row) => {
+          res.status(200).json({ artist: row });
+        }
+      );
+    }
   );
 });
 
