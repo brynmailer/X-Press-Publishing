@@ -90,47 +90,33 @@ artistsRouter.get('/:artistId', (req, res, next) => {
 });
 
 artistsRouter.put('/:artistId', (req, res, next) => {
-  if (
-    !req.body.artist.name
-    || !req.body.artist.dateOfBirth
-    || !req.body.artist.biography
-  ) {
-    res.sendStatus(400);
+  const name = req.body.artist.name,
+        dateOfBirth = req.body.artist.dateOfBirth,
+        biography = req.body.artist.biography,
+        isCurrentlyEmployed = req.body.artist.isCurrentlyEmployed === 0 ? 0 : 1;
+  if (!name || !dateOfBirth || !biography) {
+    return res.sendStatus(400);
   }
-  const updatedArtist = {
-    $name: req.body.artist.name,
-    $dateOfBirth: req.body.artist.dateOfBirth,
-    $biography: req.body.artist.biography,
-    $isCurrentlyEmployed: req.body.artist.isCurrentlyEmployed,
-    $id: req.params.artistId
-  }
-  db.run(
-    `UPDATE Artist
-    SET (
-      name = $name,
-      date_of_birth = $dateOfBirth,
-      biography = $biography,
-      is_currently_employed = $isCurrentlyEmployed
-    )
-    WHERE id = $id`,
-    updatedArtist,
-    (err) => {
-      if (err) {
-        return next(err);
-      }
-      db.run(
-        `SELECT *
-        FROM Artist
-        WHERE id = $id`,
-        {
-          $id: updatedArtist.id
-        },
-        (err, row) => {
-          res.status(200).json({ artist: row });
-        }
-      );
+  const sql = 'UPDATE Artist SET name = $name, date_of_birth = $dateOfBirth, ' +
+      'biography = $biography, is_currently_employed = $isCurrentlyEmployed ' +
+      'WHERE Artist.id = $artistId';
+  const values = {
+    $name: name,
+    $dateOfBirth: dateOfBirth,
+    $biography: biography,
+    $isCurrentlyEmployed: isCurrentlyEmployed,
+    $artistId: req.params.artistId
+  };
+  db.run(sql, values, (error) => {
+    if (error) {
+      next(error);
+    } else {
+      db.get(`SELECT * FROM Artist WHERE Artist.id = ${req.params.artistId}`,
+        (error, artist) => {
+          res.status(200).json({artist: artist});
+        });
     }
-  );
+  });
 });
 
 module.exports = artistsRouter;
