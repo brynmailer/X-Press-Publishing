@@ -3,15 +3,13 @@ const db = new sqlite3.Database('./database.sqlite');
 
 db.serialize(() => {
   db.run(
-    `DROP TABLE IF EXISTS Artist`
+    `DROP TABLE IF EXISTS Series`
   );
   db.run(
-    `CREATE TABLE Artist (
+    `CREATE TABLE Series (
       id INTEGER PRIMARY KEY,
       name TEXT NOT NULL,
-      date_of_birth TEXT NOT NULL,
-      biography TEXT NOT NULL,
-      is_currently_employed INTEGER DEFAULT 1
+      description TEXT NOT NULL
     )`
   );
 });
