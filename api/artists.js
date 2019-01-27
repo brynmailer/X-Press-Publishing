@@ -97,21 +97,27 @@ artistsRouter.put('/:artistId', (req, res, next) => {
   if (!name || !dateOfBirth || !biography) {
     return res.sendStatus(400);
   }
-  const sql = 'UPDATE Artist SET name = $name, date_of_birth = $dateOfBirth, ' +
-      'biography = $biography, is_currently_employed = $isCurrentlyEmployed ' +
-      'WHERE Artist.id = $artistId';
-  const values = {
-    $name: name,
-    $dateOfBirth: dateOfBirth,
-    $biography: biography,
-    $isCurrentlyEmployed: isCurrentlyEmployed,
-    $artistId: req.params.artistId
-  };
-  db.run(sql, values, (error) => {
+  db.run(
+    `UPDATE Artist SET
+      name = $name,
+      date_of_birth = $dateOfBirth,
+      biography = $biography,
+      is_currently_employed = $isCurrentlyEmployed
+    WHERE Artist.id = $artistId`,
+    {
+      $name: name,
+      $dateOfBirth: dateOfBirth,
+      $biography: biography,
+      $isCurrentlyEmployed: isCurrentlyEmployed,
+      $artistId: req.params.artistId
+    },
+    (error) => {
     if (error) {
       next(error);
     } else {
-      db.get(`SELECT * FROM Artist WHERE Artist.id = ${req.params.artistId}`,
+      db.get(
+        `SELECT * FROM Artist
+        WHERE Artist.id = ${req.params.artistId}`,
         (error, artist) => {
           res.status(200).json({artist: artist});
         });
