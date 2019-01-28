@@ -1,6 +1,6 @@
 const seriesRouter = require('express').Router();
 const sqlite3 = require('sqlite3');
-const db = new sqlite3.Database(process.env.TEST_DATABASE || '../database.sqlite');
+const db = new sqlite3.Database(process.env.TEST_DATABASE || './database.sqlite');
 const issuesRouter = require('./issues');
 
 seriesRouter.use('/:seriesId/issues', issuesRouter);
@@ -40,7 +40,7 @@ seriesRouter.param('seriesId', (req, res, next, seriesId) => {
 });
 
 seriesRouter.get('/:seriesId', (req, res, next) => {
-  res.status(200).json({series: req.series});
+  res.status(200).json({ series: req.series });
 });
 
 seriesRouter.post('/', (req, res, next) => {
@@ -82,7 +82,7 @@ seriesRouter.post('/', (req, res, next) => {
 
 seriesRouter.put('/:seriesId', (req, res, next) => {
   const name = req.body.series.name,
-        description = req.body.series.description;
+    description = req.body.series.description;
   if (!name || !description) {
     return res.sendStatus(400);
   }
@@ -97,24 +97,24 @@ seriesRouter.put('/:seriesId', (req, res, next) => {
       $seriesId: req.params.seriesId
     },
     (error) => {
-    if (error) {
-      next(error);
-    } else {
-      db.get(
-        `SELECT * 
+      if (error) {
+        next(error);
+      } else {
+        db.get(
+          `SELECT * 
         FROM Series WHERE Series.id = ${req.params.seriesId}`,
-        (error, series) => {
-          res.status(200).json({series: series});
-        });
-    }
-  });
+          (error, series) => {
+            res.status(200).json({ series: series });
+          });
+      }
+    });
 });
 
 seriesRouter.delete('/:seriesId', (req, res, next) => {
   db.all(
     `SELECT *
     FROM Issue
-    WHERE series_id = $seriesId`,
+    WHERE Issue.series_id = $seriesId`,
     {
       $seriesId: req.params.seriesId
     },
@@ -122,7 +122,7 @@ seriesRouter.delete('/:seriesId', (req, res, next) => {
       if (err) {
         return next(err);
       }
-      if (rows) {
+      if (rows.length > 0) {
         return res.sendStatus(400);
       }
       db.run(

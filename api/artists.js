@@ -1,6 +1,6 @@
 const artistsRouter = require('express').Router();
 const sqlite3 = require('sqlite3');
-const db = new sqlite3.Database(process.env.TEST_DATABASE || '../database.sqlite');
+const db = new sqlite3.Database(process.env.TEST_DATABASE || './database.sqlite');
 
 artistsRouter.get('/', (req, res, next) => {
   db.all(
@@ -91,9 +91,9 @@ artistsRouter.get('/:artistId', (req, res, next) => {
 
 artistsRouter.put('/:artistId', (req, res, next) => {
   const name = req.body.artist.name,
-        dateOfBirth = req.body.artist.dateOfBirth,
-        biography = req.body.artist.biography,
-        isCurrentlyEmployed = req.body.artist.isCurrentlyEmployed === 0 ? 0 : 1;
+    dateOfBirth = req.body.artist.dateOfBirth,
+    biography = req.body.artist.biography,
+    isCurrentlyEmployed = req.body.artist.isCurrentlyEmployed === 0 ? 0 : 1;
   if (!name || !dateOfBirth || !biography) {
     return res.sendStatus(400);
   }
@@ -112,17 +112,17 @@ artistsRouter.put('/:artistId', (req, res, next) => {
       $artistId: req.params.artistId
     },
     (error) => {
-    if (error) {
-      next(error);
-    } else {
-      db.get(
-        `SELECT * FROM Artist
+      if (error) {
+        next(error);
+      } else {
+        db.get(
+          `SELECT * FROM Artist
         WHERE Artist.id = ${req.params.artistId}`,
-        (error, artist) => {
-          res.status(200).json({artist: artist});
-        });
-    }
-  });
+          (error, artist) => {
+            res.status(200).json({ artist: artist });
+          });
+      }
+    });
 });
 
 artistsRouter.delete('/:artistId', (req, res, next) => {
@@ -145,7 +145,7 @@ artistsRouter.delete('/:artistId', (req, res, next) => {
           $artistId: req.params.artistId
         },
         (err, row) => {
-          res.status(200).json({artist: row});
+          res.status(200).json({ artist: row });
         }
       );
     }

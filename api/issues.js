@@ -1,6 +1,6 @@
 const issuesRouter = require('express').Router({ mergeParams: true });
 const sqlite3 = require('sqlite3');
-const db = new sqlite3.Database(process.env.TEST_DATABASE || '../database.sqlite');
+const db = new sqlite3.Database(process.env.TEST_DATABASE || './database.sqlite');
 
 const checkArtist = (req, res, next) => {
   db.get(
@@ -9,6 +9,26 @@ const checkArtist = (req, res, next) => {
     WHERE Artist.id = $artistId`,
     {
       $artistId: req.body.issue.artistId
+    },
+    (err, row) => {
+      if (err) {
+        return next(err);
+      }
+      if (!row) {
+        return res.sendStatus(400);
+      }
+      next();
+    }
+  );
+}
+
+const checkSeries = (req, res, next) => {
+  db.get(
+    `SELECT *
+    FROM Series
+    WHERE Series.id = $seriesId`,
+    {
+      $seriesId: req.params.seriesId
     },
     (err, row) => {
       if (err) {
@@ -34,16 +54,22 @@ issuesRouter.get('/', (req, res, next) => {
       if (err) {
         return next(err);
       }
-      res.status(200).json({ Issue: rows });
+      res.status(200).json({ issues: rows });
     }
   );
 });
 
-issuesRouter.post('/', checkArtist, (req, res, next) => {
-  if (!req.body.issue.name
-    || !req.body.issue.issueNumber
-    || !req.body.issue.publicationDate
-    || !req.body.issue.artistId
+issuesRouter.post('/', checkArtist, checkSeries, (req, res, next) => {
+  const name = req.body.issue.name,
+    issueNumber = req.body.issue.issueNumber,
+    publicationDate = req.body.issue.publicationDate,
+    artistId = req.body.issue.artistId,
+    seriesId = req.params.seriesId;
+  if (!name
+    || !issueNumber
+    || !publicationDate
+    || !artistId
+    || !seriesId
   ) {
     res.sendStatus(400);
   }
@@ -52,18 +78,21 @@ issuesRouter.post('/', checkArtist, (req, res, next) => {
       name,
       issue_number,
       publication_date,
-      artist_id
+      artist_id,
+      series_id
     ) VALUES (
       $name,
       $issueNumber,
       $publicationDate,
-      $artistId
+      $artistId,
+      $seriesId
     )`,
     {
-      $name: req.body.issue.name,
-      $issueNumber: req.body.issue.issueNumber,
-      $publicationDate: req.body.issue.publicationDate,
-      $artistId: req.body.issue.artistId
+      $name: name,
+      $issueNumber: issueNumber,
+      $publicationDate: publicationDate,
+      $artistId: artistId,
+      $seriesId: seriesId
     },
     function (err) {
       if (err) {
@@ -107,9 +136,9 @@ issuesRouter.param('issueId', (req, res, next, issueId) => {
 
 issuesRouter.put('/:issueId', checkArtist, (req, res, next) => {
   const name = req.body.issue.name,
-        issueNumber = req.body.issue.issueNumber,
-        publicationDate = req.body.issue.publicationDate,
-        artistId = req.body.issue.artistId;
+    issueNumber = req.body.issue.issueNumber,
+    publicationDate = req.body.issue.publicationDate,
+    artistId = req.body.issue.artistId;
   if (
     !name
     || !issueNumber
@@ -133,18 +162,18 @@ issuesRouter.put('/:issueId', checkArtist, (req, res, next) => {
       $issueId: req.params.issueId
     },
     (error) => {
-    if (error) {
-      next(error);
-    } else {
-      db.get(
-        `SELECT * 
+      if (error) {
+        next(error);
+      } else {
+        db.get(
+          `SELECT * 
         FROM Issue
         WHERE Issue.id = ${req.params.issueId}`,
-        (error, issue) => {
-          res.status(200).json({series: issue});
-        });
-    }
-  });
+          (error, issue) => {
+            res.status(200).json({ issue: issue });
+          });
+      }
+    });
 });
 
 issuesRouter.delete('/:issueId', (req, res, next) => {
